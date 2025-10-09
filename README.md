@@ -14,13 +14,6 @@ A Model Context Protocol (MCP) server that provides tools to interact with Story
 
 ## Installation and Configuration
 
-First, set up npm scope for `@lkubec` if you haven't already with your NPM token:
-
-```bash
-  npm set @lkubec:registry=https://gitlab.mibcon.cz/api/v4/packages/npm/
-  npm set //gitlab.mibcon.cz/api/v4/packages/npm/:_authToken=${NPM_TOKEN}```
-```
-
 ### MCP Settings
 
 Add the following configuration to MCP settings:
