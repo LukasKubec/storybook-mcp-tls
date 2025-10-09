@@ -1,0 +1,51 @@
+stages:
+  - test
+  - publish
+
+variables:
+  NODE_VERSION: "22"
+
+# Run tests on every commit
+test:
+  stage: test
+  image: node:${NODE_VERSION}
+  before_script:
+    - corepack enable
+    - yarn install
+  script:
+    - yarn build
+    - yarn test
+  only:
+    - main
+    - merge_requests
+
+# Manual publish job - requires clicking "Play" button in GitLab
+publish-gitlab:
+  stage: publish
+  image: node:${NODE_VERSION}
+  before_script:
+    - corepack enable
+    - yarn install
+  script:
+    - yarn build
+    - yarn test
+    # Configure npm to use GitLab package registry
+    - echo "@${CI_PROJECT_ROOT_NAMESPACE}:registry=${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/" >> .npmrc
+    - echo "${CI_API_V4_URL#https?}/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=\${CI_JOB_TOKEN}" >> .npmrc
+    # Update package.json to use scoped name for GitLab
+    - |
+      node -e "
+        const fs = require('fs');
+        const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+        pkg.name = '@${CI_PROJECT_ROOT_NAMESPACE}/' + pkg.name.replace(/^@.*?\//, '');
+        pkg.publishConfig = {
+          '@${CI_PROJECT_ROOT_NAMESPACE}:registry': '${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/npm/'
+        };
+        fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+      "
+    - npm publish
+  environment:
+    name: production
+  when: manual
+  only:
+    - main
