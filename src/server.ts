@@ -16,6 +16,7 @@ import {
   getComponentList as getComponentListV5,
   getComponentPropsDocUrl as getComponentPropsDocUrlV5,
 } from "./storybookv5.js";
+import { UnifiedDataLoader } from "./data/loader.js";
 
 // Custom tool interface
 interface CustomTool {
@@ -39,6 +40,7 @@ export class StorybookMCPServer {
   private server: Server;
   private storybookUrl: string;
   private customTools: CustomTool[] = [];
+  private dataLoader: UnifiedDataLoader;
 
   constructor() {
     this.server = new Server(
@@ -57,11 +59,14 @@ export class StorybookMCPServer {
       throw new Error("STORYBOOK_URL environment variable is required");
     }
 
-    // get Storybook URL from environment variable
+    // get Storybook URL or file path from environment variable
     this.storybookUrl = process.env.STORYBOOK_URL;
     if (!this.storybookUrl) {
       throw new Error("STORYBOOK_URL environment variable is required");
     }
+
+    // Initialize data loader (async initialization deferred to async method)
+    this.dataLoader = new UnifiedDataLoader();
 
     // Parse custom tools from environment variable
     this.parseCustomTools();
@@ -232,7 +237,7 @@ export class StorybookMCPServer {
   // get component list
   private async getComponentList() {
     try {
-      const response = await fetch(this.storybookUrl);
+      const response = await this.dataLoader.fetch(this.storybookUrl);
       if (!response.ok) {
         throw new Error(
           `Failed to fetch Storybook data: ${response.statusText}`
@@ -265,7 +270,7 @@ export class StorybookMCPServer {
   private async getComponentsProps(componentNames: string[]) {
     try {
       // 1. get Storybook data to find component IDs
-      const response = await fetch(this.storybookUrl);
+      const response = await this.dataLoader.fetch(this.storybookUrl);
       if (!response.ok) {
         throw new Error(
           `Failed to fetch Storybook data: ${response.statusText}`

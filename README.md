@@ -34,8 +34,13 @@ Add the following configuration to MCP settings:
 
 ### Environment Variables
 
-- `STORYBOOK_URL` (required): The URL to your Storybook's index.json file
+- `STORYBOOK_URL` (required): The URL or local file path to your Storybook's index.json (v5) or stories.json (v3) file
+  - Remote URL: `https://your-storybook.com/index.json`
+  - Local file (absolute): `/path/to/storybook-static/index.json`
+  - Local file (relative): `./storybook-static/index.json`
+  - File protocol: `file://./storybook-static/index.json`
 - `CUSTOM_TOOLS` (optional): JSON array of custom tool definitions for extracting specific information from your Storybook
+- `STORYBOOK_MAX_FILE_SIZE` (optional): Maximum file size in bytes for local files (default: 10485760 = 10MB)
 
 ## Usage
 
@@ -122,7 +127,9 @@ interface CustomTool {
 
 For more examples and detailed documentation, see [examples/custom-tools-example.md](examples/custom-tools-example.md).
 
-## Example
+## Examples
+
+### Example 1: Remote Storybook with Custom Tools
 
 Set `Spectrum` storybook-mcp config with `STORYBOOK_URL` and `CUSTOM_TOOLS` environment variables.
 
@@ -141,6 +148,40 @@ Set `Spectrum` storybook-mcp config with `STORYBOOK_URL` and `CUSTOM_TOOLS` envi
 }
 ```
 
+### Example 2: Local Storybook Build
+
+Use a local Storybook build from your project:
+
+```json
+{
+  "mcpServers": {
+    "storybook-local": {
+      "command": "npx",
+      "args": ["-y", "@lkubec/storybook-mcp"],
+      "env": {
+        "STORYBOOK_URL": "./storybook-static/index.json"
+      }
+    }
+  }
+}
+```
+
+### Example 3: Absolute Path to Local Storybook
+
+```json
+{
+  "mcpServers": {
+    "storybook-absolute": {
+      "command": "npx",
+      "args": ["-y", "@lkubec/storybook-mcp"],
+      "env": {
+        "STORYBOOK_URL": "/Users/username/projects/my-design-system/storybook-static/index.json"
+      }
+    }
+  }
+}
+```
+
 ## How it works
 
 1. **Component List**: The server fetches the Storybook's `index.json` file(v3 is `stories.json`) and extracts all components marked as "docs" type
@@ -150,12 +191,22 @@ Set `Spectrum` storybook-mcp config with `STORYBOOK_URL` and `CUSTOM_TOOLS` envi
    - Uses Playwright to load the page in a headless browser
    - Extracts the props table HTML from the documentation
 
-## Supported Storybook URLs
+## Supported Storybook Sources
 
-The server works with any Storybook that exposes an `index.json` file(v3 is `stories.json`). Common patterns:
+The server works with both remote URLs and local file paths:
 
+### Remote URLs
 - `https://your-storybook-domain.com/index.json`
 - `https://your-storybook-domain.com/storybook/index.json`
+- Supports mTLS client certificate authentication (see TLS configuration)
+
+### Local Files
+- Absolute paths: `/Users/name/project/storybook-static/index.json`
+- Relative paths: `./storybook-static/index.json` or `../other-project/storybook-static/index.json`
+- File protocol: `file:///absolute/path/to/index.json`
+- Both Storybook v5 (`index.json`) and v3 (`stories.json`) formats are supported
+
+**Note for npx users:** When using `npx`, relative paths are resolved from your current working directory.
 
 ## Development
 
